@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Worlds</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #loading-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+            font-size: 1.5em;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            background: #000;
+            transition: opacity 1s ease-in-out;
+        }
+        #loading-text {
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        iframe {
+            border: none;
+            display: none;
+            pointer-events: auto;
+        }
+        .mobile-full {
+            width: 100%;
+            height: 100%;
+        }
+        .mobile-frame {
+            width: 390px;
+            height: 97vh;
+            border-radius: 10px;
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.2);
+            background: #fff;
+            display: block;
+            margin: auto;
+        }
+        .webpage-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background: rgba(32, 34, 37, 0.95);
+            border-radius: 12px;
+            border: 1px solid rgba(88, 101, 242, 0.3);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+            cursor: default;
+        }
+        .webpage-panel.closed {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            bottom: 20px;
+            right: 20px;
+        }
+        .webpage-panel.closed:hover {
+            background: rgba(88, 101, 242, 0.15);
+        }
+        .mic-icon {
+            font-size: 24px;
+            color: #5865f2;
+            transition: opacity 0.3s ease-in-out;
+            user-select: none;
+            pointer-events: none;
+            position: absolute;
+            z-index: 5;
+        }
+        .webpage-panel.closed .mic-icon {
+            opacity: 1;
+        }
+        .webpage-panel:not(.closed) .mic-icon {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .close-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: rgba(237, 66, 69, 0.2);
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            color: #ed4245;
+            cursor: pointer;
+            transition: background 0.2s ease-in-out;
+            user-select: none;
+            z-index: 10;
+        }
+        .close-icon:hover {
+            background: rgba(237, 66, 69, 0.3);
+        }
+        .webpage-panel:not(.closed) .close-icon {
+            display: flex;
+        }
+        .webpage-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+            border-radius: 8px;
+            display: none;
+        }
+        .webpage-panel:not(.closed) .webpage-iframe {
+            display: block;
+        }
+        .webpage-panel.closed .webpage-iframe {
+            display: none;
+        }
+        .fallback-message {
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            color: #ed4245;
+            padding: 20px;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            background: rgba(32, 34, 37, 0.9);
+            border-radius: 8px;
+        }
+        .webpage-panel.error .webpage-iframe {
+            display: none;
+        }
+        .webpage-panel.error .fallback-message {
+            display: flex;
+        }
+        .loading-message {
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            color: #5865f2;
+            padding: 20px;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            background: rgba(32, 34, 37, 0.9);
+            border-radius: 8px;
+        }
+        .webpage-panel.loading .loading-message {
+            display: flex;
+        }
+        .webpage-panel.loading .webpage-iframe {
+            display: none;
+        }
+        .settings-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background: rgba(32, 34, 37, 0.95);
+            border-radius: 12px;
+            border: 1px solid rgba(88, 101, 242, 0.3);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+            cursor: default;
+        }
+        .settings-panel.closed {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            bottom: 90px;
+            right: 20px;
+        }
+        .settings-panel.closed:hover {
+            background: rgba(88, 101, 242, 0.15);
+        }
+        .settings-icon {
+            font-size: 24px;
+            color: #5865f2;
+            transition: opacity 0.3s ease-in-out;
+            user-select: none;
+            pointer-events: none;
+            position: absolute;
+            z-index: 5;
+        }
+        .settings-panel.closed .settings-icon {
+            opacity: 1;
+        }
+        .settings-panel:not(.closed) .settings-icon {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .settings-close-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: rgba(237, 66, 69, 0.2);
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            color: #ed4245;
+            cursor: pointer;
+            transition: background 0.2s ease-in-out;
+            user-select: none;
+            z-index: 10;
+        }
+        .settings-close-icon:hover {
+            background: rgba(237, 66, 69, 0.3);
+        }
+        .settings-panel:not(.closed) .settings-close-icon {
+            display: flex;
+        }
+        .settings-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+            border-radius: 8px;
+            display: none;
+        }
+        .settings-panel:not(.closed) .settings-iframe {
+            display: block;
+        }
+        .settings-panel.closed .settings-iframe {
+            display: none;
+        }
+        .settings-fallback-message {
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            color: #ed4245;
+            padding: 20px;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            background: rgba(32, 34, 37, 0.9);
+            border-radius: 8px;
+        }
+        .settings-panel.error .settings-iframe {
+            display: none;
+        }
+        .settings-panel.error .settings-fallback-message {
+            display: flex;
+        }
+        .settings-loading-message {
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            color: #5865f2;
+            padding: 20px;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            background: rgba(32, 34, 37, 0.9);
+            border-radius: 8px;
+        }
+        .settings-panel.loading .settings-loading-message {
+            display: flex;
+        }
+        .settings-panel.loading .settings-iframe {
+            display: none;
+        }
+        .resize-corner {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            font-size: 12px;
+            color: #5865f2;
+            background: rgba(88, 101, 242, 0.2);
+            border: 1px solid rgba(88, 101, 242, 0.3);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1002;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        .resize-corner:hover,
+        .resize-corner.active {
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
+            background: rgba(88, 101, 242, 0.4);
+            transform: scale(1.1);
+        }
+        .resize-top-left {
+            top: -10px;
+            left: -10px;
+            cursor: nwse-resize;
+        }
+        .resize-top-left::before {
+            content: '↖';
+        }
+        .resize-top-right {
+            top: -10px;
+            right: -10px;
+            cursor: nesw-resize;
+        }
+        .resize-top-right::before {
+            content: '↗';
+        }
+        .resize-bottom-left {
+            bottom: -10px;
+            left: -10px;
+            cursor: nesw-resize;
+        }
+        .resize-bottom-left::before {
+            content: '↙';
+        }
+        .resize-bottom-right {
+            bottom: -10px;
+            right: -10px;
+            cursor: nwse-resize;
+        }
+        .resize-bottom-right::before {
+            content: '↘';
+        }
+        .drag-handle {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 8px;
+            background: rgba(88, 101, 242, 0.3);
+            border-radius: 4px;
+            cursor: grab;
+            z-index: 1003;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        .drag-handle:hover,
+        .drag-handle.active {
+            opacity: 1;
+            background: rgba(88, 101, 242, 0.5);
+        }
+        .drag-handle::before {
+            content: '⋮⋮';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            color: #5865f2;
+        }
+        .hello-world {
+            position: fixed;
+            bottom: 5px;
+            right: 20px;
+            color: #5865f2;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(88, 101, 242, 0.8);
+            background: rgba(32, 34, 37, 0.8);
+            padding: 5px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(88, 101, 242, 0.5);
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px rgba(88, 101, 242, 0.8), 0 0 20px rgba(88, 101, 242, 0.6);
+            }
+            to {
+                text-shadow: 0 0 20px rgba(88, 101, 242, 1), 0 0 30px rgba(88, 101, 242, 0.8);
+            }
+        }
+        @media (max-width: 768px) {
+            .webpage-panel, .settings-panel { 
+                display: none !important; 
+            }
+            .mobile-frame {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+            .hello-world {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div id="loading-text">Please Wait…</div>
+    </div>
+    <iframe id="app-frame"></iframe>
+   
+    <div class="webpage-panel closed" id="webpage-panel">
+        <span class="mic-icon">🎤</span>
+        <span class="close-icon" id="close-icon">✖</span>
+        <div class="loading-message" id="loading-message">Loading...</div>
+        <iframe class="webpage-iframe" id="webpage-iframe" src="https://previewer.adalo.com/2ff9bfbf-52a2-42ac-9111-8bcf4f9e689f"></iframe>
+        <div class="fallback-message" id="fallback-message">Failed to load webpage. Please try again later.</div>
+        <div class="drag-handle"></div>
+        <div class="resize-corner resize-top-left" data-dir="top-left"></div>
+        <div class="resize-corner resize-top-right" data-dir="top-right"></div>
+        <div class="resize-corner resize-bottom-left" data-dir="bottom-left"></div>
+        <div class="resize-corner resize-bottom-right" data-dir="bottom-right"></div>
+    </div>
+    <div class="settings-panel closed" id="settings-panel">
+        <span class="settings-icon">⚙️</span>
+        <span class="settings-close-icon" id="settings-close-icon">✖</span>
+        <div class="settings-loading-message" id="settings-loading-message">Loading...</div>
+        <iframe class="settings-iframe" id="settings-iframe" src="https://previewer.adalo.com/2ff9bfbf-52a2-42ac-9111-8bcf4f9e689f"></iframe>
+        <div class="settings-fallback-message" id="settings-fallback-message">Failed to load webpage. Please try again later.</div>
+        <div class="drag-handle"></div>
+        <div class="resize-corner resize-top-left" data-dir="top-left"></div>
+        <div class="resize-corner resize-top-right" data-dir="top-right"></div>
+        <div class="resize-corner resize-bottom-left" data-dir="bottom-left"></div>
+        <div class="resize-corner resize-bottom-right" data-dir="bottom-right"></div>
+    </div>
+    <div class="hello-world">Hello World</div>
+    <script>
+        // Simple loading
+        const loadingText = document.getElementById('loading-text');
+        const messages = ["Connecting To Magic Worlds…", "Please wait…", "Almost ready…"];
+        let msgIndex = 0;
+        function showMessage() {
+            loadingText.style.opacity = 0;
+            setTimeout(() => {
+                loadingText.textContent = messages[msgIndex];
+                loadingText.style.opacity = 1;
+                msgIndex = (msgIndex + 1) % messages.length;
+            }, 500);
+        }
+        showMessage();
+        const msgInterval = setInterval(showMessage, 2000);
+
+        // Setup iframes
+        const iframe = document.getElementById('app-frame');
+        const webpagePanel = document.getElementById('webpage-panel');
+        const webpageIframe = document.getElementById('webpage-iframe');
+        const closeIcon = document.getElementById('close-icon');
+        const fallbackMessage = document.getElementById('fallback-message');
+        const loadingMessage = document.getElementById('loading-message');
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsIframe = document.getElementById('settings-iframe');
+        const settingsCloseIcon = document.getElementById('settings-close-icon');
+        const settingsFallbackMessage = document.getElementById('settings-fallback-message');
+        const settingsLoadingMessage = document.getElementById('settings-loading-message');
+        const phoneFrame = document.getElementById('app-frame');
+
+        function getPhoneRect() {
+            return phoneFrame.getBoundingClientRect();
+        }
+
+        if (/android|iphone|ipad/i.test(navigator.userAgent)) {
+            iframe.src = "https://t.me/magicworldsbot/?startapp";
+            iframe.classList.add("mobile-full");
+        } else {
+            iframe.src = "https://previewer.adalo.com/9a617ecf-1f98-45a1-a2c1-657fc4b4922e";
+            iframe.classList.add("mobile-frame");
+            webpagePanel.style.display = 'flex';
+            settingsPanel.style.display = 'flex';
+        }
+
+        // Webpage loading states
+        function showWebpageLoadingState() {
+            webpagePanel.classList.add('loading');
+            webpagePanel.classList.remove('error');
+        }
+
+        function showWebpageSuccessState() {
+            webpagePanel.classList.remove('loading');
+            webpagePanel.classList.remove('error');
+        }
+
+        function showWebpageErrorState() {
+            webpagePanel.classList.remove('loading');
+            webpagePanel.classList.add('error');
+        }
+
+        // Settings loading states
+        function showSettingsLoadingState() {
+            settingsPanel.classList.add('loading');
+            settingsPanel.classList.remove('error');
+        }
+
+        function showSettingsSuccessState() {
+            settingsPanel.classList.remove('loading');
+            settingsPanel.classList.remove('error');
+        }
+
+        function showSettingsErrorState() {
+            settingsPanel.classList.remove('loading');
+            settingsPanel.classList.add('error');
+        }
+
+        // Setup iframe events
+        webpageIframe.onload = () => {
+            console.log('Webpage iframe loaded successfully');
+            showWebpageSuccessState();
+        };
+
+        webpageIframe.onerror = (e) => {
+            console.log('Webpage iframe failed to load:', e);
+            showWebpageErrorState();
+        };
+
+        settingsIframe.onload = () => {
+            console.log('Settings iframe loaded successfully');
+            showSettingsSuccessState();
+        };
+
+        settingsIframe.onerror = (e) => {
+            console.log('Settings iframe failed to load:', e);
+            showSettingsErrorState();
+        };
+
+        // Drag functionality
+        function initDrag(panel) {
+            const dragHandle = panel.querySelector('.drag-handle');
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            dragHandle.addEventListener('mousedown', (e) => {
+                if (panel.classList.contains('closed')) return;
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = parseFloat(getComputedStyle(panel).left);
+                startTop = parseFloat(getComputedStyle(panel).top);
+                dragHandle.classList.add('active');
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', onDragEnd);
+                e.preventDefault();
+            });
+
+            function onDrag(e) {
+                if (!isDragging) return;
+                let dx = e.clientX - startX;
+                let dy = e.clientY - startY;
+                let newLeft = startLeft + dx;
+                let newTop = startTop + dy;
+                const currentWidth = parseFloat(getComputedStyle(panel).width);
+                const currentHeight = parseFloat(getComputedStyle(panel).height);
+                const phoneRect = getPhoneRect();
+                newLeft = Math.max(phoneRect.right, Math.max(0, Math.min(newLeft, window.innerWidth - currentWidth)));
+                newTop = Math.max(0, Math.min(newTop, window.innerHeight - currentHeight));
+                panel.style.left = newLeft + 'px';
+                panel.style.top = newTop + 'px';
+            }
+
+            function onDragEnd() {
+                isDragging = false;
+                dragHandle.classList.remove('active');
+                document.removeEventListener('mousemove', onDrag);
+                document.removeEventListener('mouseup', onDragEnd);
+            }
+        }
+
+        // Resizable functions
+        function initResizable(panel) {
+            let currentCorner = null;
+            const cornerSize = 20;
+            let isResizing = false;
+
+            panel.addEventListener('mousemove', (e) => {
+                if (panel.classList.contains('closed') || isResizing) return;
+                const rect = panel.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const w = rect.width;
+                const h = rect.height;
+                let newCorner = null;
+                let cursor = 'default';
+
+                if (x <= cornerSize && y <= cornerSize) {
+                    newCorner = 'top-left';
+                    cursor = 'nwse-resize';
+                } else if (x >= w - cornerSize && y <= cornerSize) {
+                    newCorner = 'top-right';
+                    cursor = 'nesw-resize';
+                } else if (x <= cornerSize && y >= h - cornerSize) {
+                    newCorner = 'bottom-left';
+                    cursor = 'nesw-resize';
+                } else if (x >= w - cornerSize && y >= h - cornerSize) {
+                    newCorner = 'bottom-right';
+                    cursor = 'nwse-resize';
+                }
+
+                if (newCorner !== currentCorner) {
+                    hideAllCorners(panel);
+                    if (newCorner) {
+                        showCorner(panel, newCorner);
+                    }
+                    currentCorner = newCorner;
+                    panel.style.cursor = cursor;
+                }
+            });
+
+            panel.addEventListener('mouseleave', () => {
+                if (!isResizing) {
+                    hideAllCorners(panel);
+                    panel.style.cursor = 'default';
+                    currentCorner = null;
+                }
+            });
+
+            // Add mousedown to corners
+            const corners = panel.querySelectorAll('.resize-corner');
+            corners.forEach(corner => {
+                corner.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    const dir = corner.dataset.dir;
+                    startResize(panel, dir, e);
+                });
+            });
+        }
+
+        function showCorner(panel, dir) {
+            const corner = panel.querySelector(`[data-dir="${dir}"]`);
+            if (corner) {
+                corner.style.opacity = '1';
+            }
+        }
+
+        function hideAllCorners(panel) {
+            const corners = panel.querySelectorAll('.resize-corner');
+            corners.forEach(corner => {
+                corner.style.opacity = '0';
+                corner.classList.remove('active');
+            });
+        }
+
+        function startResize(panel, direction, e) {
+            const corner = panel.querySelector(`[data-dir="${direction}"]`);
+            if (corner) corner.classList.add('active');
+
+            let startX = e.clientX;
+            let startY = e.clientY;
+            let startLeft = parseFloat(getComputedStyle(panel).left);
+            let startTop = parseFloat(getComputedStyle(panel).top);
+            let startWidth = parseFloat(getComputedStyle(panel).width);
+            let startHeight = parseFloat(getComputedStyle(panel).height);
+
+            function onMove(e) {
+                let dx = e.clientX - startX;
+                let dy = e.clientY - startY;
+                let newLeft = startLeft;
+                let newTop = startTop;
+                let newWidth = startWidth;
+                let newHeight = startHeight;
+
+                const phoneRect = getPhoneRect();
+
+                if (direction === 'bottom-right') {
+                    newWidth = Math.max(150, Math.min(startWidth + dx, window.innerWidth - startLeft));
+                    newHeight = Math.max(150, Math.min(startHeight + dy, window.innerHeight - startTop));
+                    if (newWidth >= 150 && newHeight >= 150) {
+                        panel.style.width = newWidth + 'px';
+                        panel.style.height = newHeight + 'px';
+                    }
+                } else if (direction === 'top-left') {
+                    let tentative_dx = dx;
+                    let tentative_left = startLeft + tentative_dx;
+                    let tentative_top = startTop + dy;
+                    let clamped_left = Math.max(phoneRect.right, Math.max(0, tentative_left));
+                    let clamped_top = Math.max(0, tentative_top);
+                    let actual_dx = clamped_left - startLeft;
+                    let actual_dy = clamped_top - startTop;
+                    newWidth = Math.max(150, startWidth - actual_dx);
+                    newHeight = Math.max(150, startHeight - actual_dy);
+                    newWidth = Math.min(newWidth, window.innerWidth - clamped_left);
+                    newHeight = Math.min(newHeight, window.innerHeight - clamped_top);
+                    if (newWidth >= 150 && newHeight >= 150) {
+                        panel.style.left = clamped_left + 'px';
+                        panel.style.top = clamped_top + 'px';
+                        panel.style.width = newWidth + 'px';
+                        panel.style.height = newHeight + 'px';
+                    }
+                } else if (direction === 'top-right') {
+                    let tentative_top = startTop + dy;
+                    let clamped_top = Math.max(0, tentative_top);
+                    let actual_dy = clamped_top - startTop;
+                    newTop = clamped_top;
+                    newWidth = Math.max(150, startWidth + dx);
+                    newHeight = Math.max(150, startHeight - actual_dy);
+                    newWidth = Math.min(newWidth, window.innerWidth - startLeft);
+                    newHeight = Math.min(newHeight, window.innerHeight - newTop);
+                    if (newWidth >= 150 && newHeight >= 150) {
+                        panel.style.top = newTop + 'px';
+                        panel.style.width = newWidth + 'px';
+                        panel.style.height = newHeight + 'px';
+                    }
+                } else if (direction === 'bottom-left') {
+                    let tentative_dx = dx;
+                    let tentative_left = startLeft + tentative_dx;
+                    let clamped_left = Math.max(phoneRect.right, Math.max(0, tentative_left));
+                    let actual_dx = clamped_left - startLeft;
+                    newLeft = clamped_left;
+                    newWidth = Math.max(150, startWidth - actual_dx);
+                    newHeight = Math.max(150, startHeight + dy);
+                    newWidth = Math.min(newWidth, window.innerWidth - newLeft);
+                    newHeight = Math.min(newHeight, window.innerHeight - startTop);
+                    if (newWidth >= 150 && newHeight >= 150) {
+                        panel.style.left = newLeft + 'px';
+                        panel.style.width = newWidth + 'px';
+                        panel.style.height = newHeight + 'px';
+                    }
+                }
+            }
+
+            function onUp() {
+                if (corner) corner.classList.remove('active');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            }
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+
+        initDrag(webpagePanel);
+        initResizable(webpagePanel);
+        initDrag(settingsPanel);
+        initResizable(settingsPanel);
+
+        // Start loading when panel opens
+        function openWebpagePanel() {
+            showWebpageLoadingState();
+            const bottomMargin = 20;
+            const rightMargin = 20;
+            const closedHeight = 60;
+            const closedWidth = 60;
+            const openHeight = 400;
+            const openWidth = 300;
+            const currentTop = window.innerHeight - bottomMargin - closedHeight;
+            const currentLeft = window.innerWidth - rightMargin - closedWidth;
+            webpagePanel.style.bottom = '';
+            webpagePanel.style.right = '';
+            webpagePanel.style.top = currentTop + 'px';
+            webpagePanel.style.left = currentLeft + 'px';
+            webpagePanel.classList.remove('closed');
+            webpagePanel.style.width = openWidth + 'px';
+            webpagePanel.style.height = openHeight + 'px';
+            const newTop = window.innerHeight - bottomMargin - openHeight;
+            const newLeft = window.innerWidth - rightMargin - openWidth;
+            webpagePanel.style.top = newTop + 'px';
+            webpagePanel.style.left = newLeft + 'px';
+            // Force reload the iframe to trigger loading state
+            const currentSrc = webpageIframe.src;
+            webpageIframe.src = '';
+            setTimeout(() => {
+                webpageIframe.src = currentSrc;
+            }, 100);
+        }
+
+        function closeWebpagePanel() {
+            const bottomMargin = 20;
+            const rightMargin = 20;
+            const closedHeight = 60;
+            const closedWidth = 60;
+            webpagePanel.style.width = closedWidth + 'px';
+            webpagePanel.style.height = closedHeight + 'px';
+            const newTop = window.innerHeight - bottomMargin - closedHeight;
+            const newLeft = window.innerWidth - rightMargin - closedWidth;
+            webpagePanel.style.top = newTop + 'px';
+            webpagePanel.style.left = newLeft + 'px';
+            webpagePanel.classList.add('closed');
+        }
+
+        function toggleWebpagePanel() {
+            if (webpagePanel.classList.contains('closed')) {
+                openWebpagePanel();
+            } else {
+                closeWebpagePanel();
+            }
+        }
+
+        function openSettingsPanel() {
+            showSettingsLoadingState();
+            const bottomMargin = 90;
+            const rightMargin = 20;
+            const closedHeight = 60;
+            const closedWidth = 60;
+            const openHeight = 400;
+            const openWidth = 300;
+            const currentTop = window.innerHeight - bottomMargin - closedHeight;
+            const currentLeft = window.innerWidth - rightMargin - closedWidth;
+            settingsPanel.style.bottom = '';
+            settingsPanel.style.right = '';
+            settingsPanel.style.top = currentTop + 'px';
+            settingsPanel.style.left = currentLeft + 'px';
+            settingsPanel.classList.remove('closed');
+            settingsPanel.style.width = openWidth + 'px';
+            settingsPanel.style.height = openHeight + 'px';
+            const newTop = window.innerHeight - bottomMargin - openHeight;
+            const newLeft = window.innerWidth - rightMargin - openWidth;
+            settingsPanel.style.top = newTop + 'px';
+            settingsPanel.style.left = newLeft + 'px';
+            // Force reload the iframe to trigger loading state
+            const currentSrc = settingsIframe.src;
+            settingsIframe.src = '';
+            setTimeout(() => {
+                settingsIframe.src = currentSrc;
+            }, 100);
+        }
+
+        function closeSettingsPanel() {
+            const bottomMargin = 90;
+            const rightMargin = 20;
+            const closedHeight = 60;
+            const closedWidth = 60;
+            settingsPanel.style.width = closedWidth + 'px';
+            settingsPanel.style.height = closedHeight + 'px';
+            const newTop = window.innerHeight - bottomMargin - closedHeight;
+            const newLeft = window.innerWidth - rightMargin - closedWidth;
+            settingsPanel.style.top = newTop + 'px';
+            settingsPanel.style.left = newLeft + 'px';
+            settingsPanel.classList.add('closed');
+        }
+
+        function toggleSettingsPanel() {
+            if (settingsPanel.classList.contains('closed')) {
+                openSettingsPanel();
+            } else {
+                closeSettingsPanel();
+            }
+        }
+
+        // Switch between panels
+        function switchPanels() {
+            const webpageOpen = !webpagePanel.classList.contains('closed');
+            const settingsOpen = !settingsPanel.classList.contains('closed');
+            if (webpageOpen && settingsOpen) {
+                // Simple switch: toggle visibility or z-index
+                if (parseInt(webpagePanel.style.zIndex || 1000) < parseInt(settingsPanel.style.zIndex || 1001)) {
+                    webpagePanel.style.zIndex = '1002';
+                    settingsPanel.style.zIndex = '1001';
+                } else {
+                    settingsPanel.style.zIndex = '1002';
+                    webpagePanel.style.zIndex = '1001';
+                }
+            }
+        }
+
+        // Event listeners
+        webpagePanel.addEventListener('click', (e) => {
+            // Only toggle if clicking on the closed panel (not the close button)
+            if (webpagePanel.classList.contains('closed') && e.target !== closeIcon) {
+                e.stopPropagation();
+                toggleWebpagePanel();
+                switchPanels();
+            }
+        });
+
+        closeIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeWebpagePanel();
+        });
+
+        settingsPanel.addEventListener('click', (e) => {
+            // Only toggle if clicking on the closed panel (not the close button)
+            if (settingsPanel.classList.contains('closed') && e.target !== settingsCloseIcon) {
+                e.stopPropagation();
+                toggleSettingsPanel();
+                switchPanels();
+            }
+        });
+
+        settingsCloseIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeSettingsPanel();
+        });
+
+        // Finish loading
+        setTimeout(() => {
+            clearInterval(msgInterval);
+            document.getElementById('loading-screen').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                iframe.style.display = 'block';
+            }, 1000);
+        }, 4000);
+    </script>
+</body>
+</html>
